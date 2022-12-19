@@ -44,9 +44,9 @@ jobs:
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       env:
-        USERNAME: ${{ secrets.OPENSTACK_USERNAME }}
-        password: ${{ secrets.OPENSTACK_PASSPHRASE }}
-        tenant_name: ${{ secrets.OPENSTACK_TENANT_NAME }}
+        TF_VAR_username: ${{ secrets.OPENSTACK_USERNAME }}
+        TF_VAR_password: ${{ secrets.OPENSTACK_PASSPHRASE }}
+        TF_VAR_tenant_name: ${{ secrets.OPENSTACK_TENANT_NAME }}
       run: terraform init -input=false
 
     # Generates an execution plan for Terraform
