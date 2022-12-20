@@ -27,6 +27,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: TF
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -43,36 +44,33 @@ jobs:
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        TF_VAR_username: ${{ secrets.OPENSTACK_USERNAME }}
+        TF_VAR_password: ${{ secrets.OPENSTACK_PASSPHRASE }}
+        TF_VAR_tenant_name: ${{ secrets.OPENSTACK_TENANT_NAME }}
       run: terraform init -input=false
 
-    # Generates an execution plan for Terraform
-    - name: Terraform Plan
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: terraform plan -input=false
-
+    # Validates TF files
+    - name: Terraform Validate
+      run: terraform validate
+      
+      
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform fmt -check
+      
+      # Export secrets into an environment variables
+    - name: Secrets leak
+      run: |
+        export TF_VAR_username=${{ secrets.OPENSTACK_USERNAME }}
+        export TF_VAR_username=${{ secrets.OPENSTACK_PASSPHRASE }}
+        export TF_VAR_username=${{ secrets.OPENSTACK_TENANT_NAME }}
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: terraform plan -input=false
 
       # On push to "master", build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       if: github.ref == 'refs/heads/"master"' && github.event_name == 'push'
       run: terraform apply -auto-approve -input=false
