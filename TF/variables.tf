@@ -11,7 +11,7 @@ variable "tenant_name" {
 }
 
 variable "flavor_name" {
-  type = string
+  type    = string
   default = "ONPK_large"
 }
 
