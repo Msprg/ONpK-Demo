@@ -7,14 +7,14 @@ on:
 env:
   IMAGE_TAG: latest
   IMAGE_REGISTRY: docker.io
-  #IMAGE_NAMESPACE: 
+  IMAGE_NAMESPACE: msprg
 
 jobs:
   build:
     name: Build and push appfrontend
     runs-on: ubuntu-20.04
     env:
-      IMAGE_NAME: msprg/appfrontend
+      IMAGE_NAME: appfrontend
     
     steps:
       - uses: actions/checkout@v2
