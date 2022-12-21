@@ -1,8 +1,9 @@
-name: Build
+name: Build and Push appfrontend to docker.io
 
 on:
-  workflow_dispatch
-#  push:
+  #workflow_dispatch
+  push:
+    branches: [ "master" ]
       
 env:
   IMAGE_TAG: latest
