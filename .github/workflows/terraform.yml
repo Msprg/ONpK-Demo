@@ -2,24 +2,26 @@
 # with an API token for Terraform Cloud (app.terraform.io). On pull request events, this workflow will run
 # `terraform init`, `terraform fmt`, and `terraform plan` (speculative plan via Terraform Cloud). On push events
 # to the "master" branch, `terraform apply` will be executed.
-#
-# Documentation for `hashicorp/setup-terraform` is located here: https://github.com/hashicorp/setup-terraform
-# Merged with: https://betterprogramming.pub/infra-ci-cd-using-terraform-github-actions-8fbcca0d2226
-#
-# ToDo: Change/Add apropriate tokens/secrets
 
-name: 'Terraform'
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
+name: "Terraform deploy"
+
+on: workflow_dispatch
+
+#on:
+#  #schedule:
+#  #  - cron: "*/15 * * * *" # At every 15th minute
+#  push:
+#    branches:
+#      - "master"
+#    paths:
+#      - appbackend/**
 
 permissions:
   contents: read
 
 jobs:
   terraform:
-    name: 'Deploy to MaaS Cloud provider'
+    name: "Terraform"
     runs-on: ubuntu-latest
     environment: production
 
@@ -27,58 +29,57 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: TF
+        working-directory: ./TF
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v3
-    
-    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration.
-    - name: Install Terraform
-      run: |
-        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt update && sudo apt install terraform
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      env:
-        TF_VAR_username: ${{ secrets.OPENSTACK_USERNAME }}
-        TF_VAR_password: ${{ secrets.OPENSTACK_PASSPHRASE }}
-        TF_VAR_tenant_name: ${{ secrets.OPENSTACK_TENANT_NAME }}
-      run: terraform init -input=false
+      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-    # Validates TF files
-    - name: Terraform Validate
-      run: terraform validate
-      
-      
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check
-      
-      # Export secrets into an environment variables
-    - name: Secrets leak
-      run: |
-        export TF_VAR_username=${{ secrets.OPENSTACK_USERNAME }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_PASSPHRASE }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_TENANT_NAME }}
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
 
-    # Generates an execution plan for Terraform
-    - name: Terraform Plan
-      run: |
-        export TF_VAR_username=${{ secrets.OPENSTACK_USERNAME }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_PASSPHRASE }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_TENANT_NAME }}
-        terraform plan -input=false
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: terraform init
 
-      # On push to "master", build or change infrastructure according to Terraform configuration files
-      # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/"master"' && github.event_name == 'push'
-      run: |
-        export TF_VAR_username=${{ secrets.OPENSTACK_USERNAME }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_PASSPHRASE }}
-        export TF_VAR_username=${{ secrets.OPENSTACK_TENANT_NAME }}
-        terraform apply -auto-approve -input=false
+      # Validate runs checks that verify whether a configuration is syntactically valid and internally consistent, regardless of any provided variables or existing state.
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      # Install and set-up OpenVPN
+      - name: Install and setup OpenVPN
+        run: |
+          sudo apt update -y
+          sudo apt install openvpn -y         
+          wget https://ikt.uniza.sk/apps/vpn/vpngw2.uniza.sk.ovpn
+          echo "${{ secrets.UNIZA_VPN_UNAME }}" >> secret.txt
+          echo "${{ secrets.UNIZA_VPN_PASSPHRASE }}" >> secret.txt
+        working-directory: ./
+
+      # Connect to OpenVpn
+      - name: Connect to OpenVPN
+        timeout-minutes: 1
+        run: |
+          sudo openvpn --config vpngw2.uniza.sk.ovpn --auth-user-pass secret.txt --daemon
+          sleep 15
+        working-directory: ./
+
+      # Generates an execution plan for Terraform
+      - name: Terraform Plan
+        run: terraform plan -input=false  -var="user_name=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
+
+        # Build or change infrastructure according to Terraform configuration files
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false -var="user_name=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
+        working-directory: ./TF
