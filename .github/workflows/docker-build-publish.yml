@@ -14,7 +14,7 @@ jobs:
     name: Build and push appfrontend
     runs-on: ubuntu-20.04
     env:
-      IMAGE_NAME: appfrontend
+      IMAGE_NAME: msprg/appfrontend
     
     steps:
       - uses: actions/checkout@v2
