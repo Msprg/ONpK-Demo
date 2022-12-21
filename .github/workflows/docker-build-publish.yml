@@ -26,7 +26,7 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAG }}
           #archs: amd64, ppc64le, s390x, arm64
-          dockerfiles: /DockerFiles/backend/Dockerfile
+          dockerfiles: /DockerFiles/frontend/Dockerfile
             
       - name: Push To docker.io
         id: push-to-docker
