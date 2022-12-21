@@ -2,8 +2,10 @@ name: Build
 
 on:
   #workflow_dispatch
-  push:
-    branches: [ "master" ]
+  #push:
+  #  branches: [ "master" ]
+  schedule: 
+    - cron: '30 0 * * 6'
       
 env:
   IMAGE_TAG: latest
