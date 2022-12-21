@@ -77,9 +77,9 @@ jobs:
 
       # Generates an execution plan for Terraform
       - name: Terraform Plan
-        run: terraform plan -input=false  -var="user_name=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
+        run: terraform plan -input=false  -var="username=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
 
         # Build or change infrastructure according to Terraform configuration files
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false -var="user_name=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
+        run: terraform apply -auto-approve -input=false -var="username=${{ secrets.OPENSTACK_USERNAME }}" -var="tenant_name=${{ secrets.OPENSTACK_TENANT_NAME }}" -var="password=${{ secrets.OPENSTACK_PASSPHRASE }}"
         working-directory: ./TF
