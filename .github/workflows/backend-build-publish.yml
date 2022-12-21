@@ -1,8 +1,9 @@
 name: Build
 
 on:
-  workflow_dispatch
-#  push:
+  #workflow_dispatch
+  push:
+    branches: [ "master" ]
       
 env:
   IMAGE_TAG: latest
